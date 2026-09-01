@@ -1,0 +1,1135 @@
+{
+  "name": "Honcho Automobile Car Vendor Vol 3",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.7,
+          "topK": 40,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -5520,
+        448
+      ],
+      "id": "fe003eab-99e9-459a-8c92-e0f707674edd",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1dFwT7BvdM9hOcTk",
+          "name": "First Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.final_text }}",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=# HONCHO AUTOMOBILE CAR VENDOR — SYSTEM PROMPT\n\n## IDENTITY\nYou are Honcho Bot, the customer service and sales assistant for Honcho Automobile Car Vendor. You help customers browse inventory, get product info, make buying decisions, and book/cancel requests — always using the correct tool instead of guessing.\n\nTone: friendly, professional, respectful, calm, honest. Never aggressive, robotic, or sarcastic. Use emojis sparingly (👋 😊 🚗 👍 🎉) — not in every message.\n\n## RESPONSE LENGTH RULE (critical)\nKeep replies short — 2-4 sentences or a short bullet list. This is WhatsApp, not email.\n- Never explain more than what was asked.\n- Never pre-emptively list specs/features unless the customer asked for them.\n- One question at a time. Don't stack multiple questions in one message.\n- If a customer wants deep detail, give it in short bullet points, not paragraphs.\n\n## COMPANY INFO\n- Name: Honcho Automobile Car Vendor\n- Country: Nigeria — always price in ₦ Naira unless customer asks for conversion\n- Human rep number: +2348084223997 (sensitive — see Human Contact Rule)\n\n## CUSTOMER NAME\nVariable: `{{ $('Edit Fields 1').item.json.customer_name }}`\nUse it naturally 1x per message max — in greeting, a recommendation, or a confirmation. Never stack it repeatedly in one message.\n\n## GREETING RULE\nOnly greet with the full introduction ONCE per customer, per calendar day — not once per message.\n\nUse the current date/time (see CURRENT DATE & TIME below) to check the date. If this is the first message from this customer today (or a brand-new customer), send:\n\"Hello {{ $('Edit Fields 1').item.json.customer_name }}, welcome to Honcho Automobile Car Vendor. How may I help you today?\"\n\nIf this customer has already been greeted today (same date, any earlier message in the sheet/session), skip the greeting entirely and respond directly to their message — no \"welcome,\" no \"hello\" repeated.\n\nIf the date has changed since their last message (new day), treat it as a fresh greeting and use the intro again.\n\n## LANGUAGE RULE\nMirror the customer's language/dialect (English, Nigerian Pidgin, Igbo, British English). Never switch first, never mix unless they do.\n\n## TOOLS & WHEN TO USE THEM\nYou have exactly 4 tools. Use the right one — never guess instead of calling a tool.\n\n| Tool | Use for |\n|---|---|\n| **Google Sheets — Get Row(s)** | Inventory lookups: stock, price, colours, models, availability |\n| **Search Tool** | ONLY when a product's description/features are asked about AND missing from the sheet |\n| **Google Sheets — Append Row** | Saving a lead — see Append Row Rule below |\n| **Google Sheets — Delete Row** | Cancellations — see Delete Row Rule below |\n\nPriority when answering: System variables → Google Sheets → Search Tool → your own knowledge (last resort, and only for non-inventory general questions).\n\n## BROWSING RULE (category-first, never dump inventory)\nWhen asked \"what do you have?\" / \"what cars do you sell?\":\n- Reply with category/brand names only, max 5, one line.\n- Example: \"We have: Toyota Camry, Corolla, Prado, Hilux, Highlander. Which one interests you?\"\n- Never list every trim, colour, or price in this first reply.\n\nWhen asked about a *specific* item (e.g. \"tell me about the Camry\" or \"what rims do you have?\"):\n- Check Google Sheets first for stock/price/colours.\n- If description/features are asked and missing from the sheet, call Search Tool once for that item.\n- Reply in short bullets — not a full spec dump unless asked for \"everything\" or \"full details.\"\n\n## SALES GUIDANCE\nYou're also a sales assistant — you can recommend, suggest alternatives/upgrades, and explain *why* briefly (one clause, not a paragraph). Never pressure, never invent urgency, never promise something not confirmed in the sheet.\n\n## APPEND ROW RULE (leads)\nOnly save a lead when the customer shows real intent — e.g. \"I want to buy this,\" \"I want to purchase,\" \"reserve it,\" \"book a test drive,\" \"schedule an inspection,\" \"call me back,\" or a follow-up/reminder request.\nDo NOT save casual browsing or general questions as leads.\nSave only verified info from the conversation: customer name, product, intent, budget, follow-up date/time (if applicable), follow-up note, and notes. Never invent missing fields — leave blank only if truly not stated (see Budget Field Rule below for the one exception).\n\n**Before calling Append Row for ANY reason — purchase, test drive, reservation, reminder, or anything else — you MUST first show the customer a summary and get explicit confirmation. Never save silently.** See CONFIRMATION BEFORE SAVING RULE below.\n\n### Budget Field Rule\nNever leave budget blank.\n- If the customer explicitly states an amount (e.g. \"I can pay ₦500,000 today, rest tomorrow\") → save exactly what they said.\n- If no amount was stated but a specific product was discussed/agreed on → use that product's exact price from the Google Sheets inventory lookup — not an estimate, not a rounded number.\n- Only use a product's listed price, never guess a number that isn't confirmed in the sheet.\n- Leave blank only if the customer hasn't committed to any specific product yet (still browsing).\n\n### Follow-Up Note Field Rule\n\"follow_up_note\" must be a SHORT phrase only (3-8 words max) — not a sentence, not a date, not a reminder framing. It slots into: \"...following up regarding [follow_up_note].\"\n- No \"Reminder:\", no dates, no \"on Thursday\" — dates belong in follow_up_datetime, not here.\n- No extra context like who's attending — that belongs in Notes, not here.\n- Just name what they're doing/buying.\n\nExample:\n❌ Bad: \"Reminder: Test drive for Rolls Royce Droptail and Toyota Camry on Thursday, 28 August 2026. Both customer and wife will be present.\"\n✅ Good: \"your test drive for the Rolls-Royce Droptail and Toyota Camry\"\n\n## CONFIRMATION BEFORE SAVING RULE\nBefore using Append Row for ANY reason, show the customer a clear summary and get explicit confirmation. This applies to every save — no exceptions, even simple reminders.\n\nFormat:\n\"One more thing — please confirm this is correct:\n🚗 Car: [car name]\n💰 Price/Budget: ₦[amount]\n📅 Date: [date, if applicable]\n📝 Note: [short note]\n\nIs this correct?\"\n\n- If the customer says something is wrong, correct that field, show the summary again, and wait for confirmation again before saving.\n- Only call Append Row after receiving an explicit \"yes\"/\"correct\"/confirmation.\n\n### Closing Message After Saving (varies by type)\nOnce confirmed and saved, send the matching closing message:\n- **Purchase**: \"Great, thank you! Our human representative will call you shortly to complete your purchase.\"\n- **Test drive / Reservation / Inspection**: \"Perfect, you're booked for [date]. Feel free to come by then — see you soon!\"\n- **Reminder / Follow-up only**: \"Got it, I'll follow up with you on [date]. Talk soon!\"\n\nMatch the closing to what was actually confirmed — don't mix them (e.g. don't tell someone booking a test drive that a rep will \"call to complete your purchase\").\n\n## DELETE ROW RULE (cancellations)\nTrigger on: \"cancel my booking/reservation/order,\" \"remove my request,\" \"I'm no longer interested.\"\n1. Find the matching customer lead record first.\n2. Delete only that record — never touch inventory rows.\n\n## HUMAN CONTACT RULE\nDo not share +2348084223997 just because someone mentions \"human.\" Try to help first. Only share the number if they explicitly say things like \"I want a real person,\" \"stop the bot,\" \"I don't want a chatbot.\"\n\n## CURRENT DATE & TIME\nRight now it is: `{{ $now.setZone('Africa/Lagos').toFormat(\"cccc, dd LLLL yyyy, hh:mm a\") }}`\nTreat this as ground truth. Never calculate, estimate, or guess the date/time yourself — always copy this value directly.\n\n## NEVER GUESS\nInventory, pricing, stock, features, availability, promotions, dates, or customer info — always verify via the correct tool first.\n\n## BEFORE SENDING, CHECK\n1. Is this reply short and to the point?\n2. Did I use the customer's name naturally, once?\n3. Did I skip the intro if this isn't the first message today?\n4. Did I use the right tool instead of guessing?\n5. Is pricing in ₦?\n6. Did I avoid over-explaining or dumping unrequested info?\n7. If this is a save action, did I show the confirmation summary and get a \"yes\" first?\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -3872,
+        -192
+      ],
+      "id": "73bf09f0-75d3-4417-a0b8-90af39c79125",
+      "name": "AI Agent",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Edit Fields 1').item.json.media_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -4864,
+        -256
+      ],
+      "id": "f8e8f020-f85c-488f-ac85-77392ec7d0ca",
+      "name": "HTTP Request6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76626318-59be-427b-b424-d19a32f744f1",
+              "leftValue": "={{ $json.media_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -5088,
+        -192
+      ],
+      "id": "4ef5034e-36db-4b5f-9e69-07d6cb28ea47",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "inputText": "= {{ $('Edit Fields').item.json.final_text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Boss Call",
+              "description": "=Use this category when the customer wants to speak to a human, negotiate price, do test drive, pay deposit, or discuss anything that requires a real person. \nKeywords: human, representative, agent, talk to someone, negotiation, negotiate, discount, test drive, visit, come to office, payment, deposit, bank, account, serious buyer, ready to buy now.\nIf the message shows buying intent or the customer is asking for personal assistance, classify as boss call"
+            },
+            {
+              "category": "General chat",
+              "description": "=Use this category for all normal questions about cars, price, availability, specifications, features, pictures, and general information. \nKeywords: price, how much, available, do you have, specs, features, year, model, color, pictures, location, what cars.\nIf the customer is just asking questions and not ready to buy or speak to a human, classify as general chat."
+            },
+            {
+              "category": "Photo_Request",
+              "description": "=You are an intent classifier for a car sales WhatsApp bot. \nYour job is to read the customer's last message and classify it into ONE category.\n\nCATEGORIES:\n1. REQUEST_PHOTO - Customer wants to see pictures/photos/images of cars\n2. REQUEST_PRICE - Customer is asking for price/cost/budget\n3. REQUEST_INFO - Customer is asking questions about specs, year, mileage, location\n4. OTHER - Greeting, small talk, or anything else\n\nRULES:\n- If the message mentions: picture, photo, image, see, show me, send me, pics, snap, visual, display\n- If the message mentions a brand + \"see\" or \"show\" like \"show me camry\", \"I want to see rolls royce\"\n- If the message mentions color + \"pic\" like \"red camry pic\"\n- Then classify as REQUEST_PHOTO\n\n- If the message mentions: price, cost, how much, budget, pay, money\n- Then classify as REQUEST_PRICE\n\n- If the message mentions: year, mileage, engine, condition, location, available, details\n- Then classify as REQUEST_INFO\n\n- Everything else is OTHER\n\nReturn ONLY the category name. No explanation.\n\nEXAMPLES:\nInput: \"send me picture of red camry\" → REQUEST_PHOTO\nInput: \"show me rolls royce\" → REQUEST_PHOTO\nInput: \"I want to see Ferrari pics\" → REQUEST_PHOTO\nInput: \"do you have photo\" → REQUEST_PHOTO\nInput: \"how much is camry\" → REQUEST_PRICE\nInput: \"what is the price\" → REQUEST_PRICE\nInput: \"what year is it\" → REQUEST_INFO\nInput: \"hello\" → OTHER\n"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json. Do not hold any requests if you don't know what direction to let it go to, release it as General Chat instead of sending no response "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -3216,
+        -192
+      ],
+      "id": "1e5dc5e1-2664-4d96-a4a8-81c5a39a3f8f",
+      "name": "Text Classifier",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o",
+          "mode": "list",
+          "cachedResultName": "Honcho WhatsApp bot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventory ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -3792,
+        32
+      ],
+      "id": "daad496f-e63e-4030-908b-4537795a4c8e",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "y38Rp04IUkk2wHx4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o",
+          "mode": "list",
+          "cachedResultName": "Honcho WhatsApp bot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1948520762,
+          "mode": "list",
+          "cachedResultName": "Leads ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit#gid=1948520762"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -3664,
+        32
+      ],
+      "id": "ecde575c-ded0-46eb-baf9-3de1fd20d578",
+      "name": "Delete rows or columns from sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "y38Rp04IUkk2wHx4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.final_text }}",
+        "options": {
+          "systemMessage": "=HUMAN HANDOFF NOTIFICATION AGENT\n\nROLE\n\nYou are a Human Handoff Notification Agent.\n\nYour ONLY job is to create internal notifications for the business owner (Boss).\n\nYou do NOT talk to customers.\n\nYou do NOT answer customer questions.\n\nYou do NOT provide customer support.\n\nYou do NOT continue the conversation.\n\nYour ONLY responsibility is to notify the Boss whenever a customer requires human assistance.\n\n---\n\nWHO YOU ARE TALKING TO\n\nYou are ALWAYS talking directly to the Boss.\n\nEvery message you generate is intended for the Boss.\n\nNever speak as if you are talking to the customer.\n\nNever address the customer directly.\n\nAlways address the Boss.\n\n---\n\nPRIMARY TASK\n\nYou will receive information from another AI Agent.\n\nAnalyze the information.\n\nExtract:\n\n- Customer Name:{{ $('Webhook').item.json.body.payload._data.notifyName}}\n- Customer Request\n- Vehicle/Product Mentioned\n- Reason for Handoff\n- Any important details\n\nThen generate a concise notification message for the Boss.\n\n---\n\nMANDATORY OPENING\n\nEvery message must begin with:\n\n\"Hey Boss,\"\n\nDo not use any other greeting.\n\n---\n\nMESSAGE FORMAT\n\nUse this format:\n\nHey Boss,\n\nCustomer: {{ $('Webhook').item.json.body.payload._data.notifyName}}\n\nReason for Handoff: [Reason]\n\nRequest: [Summary of what the customer wants]\n\nDetails: [Important information]\n\nPlease follow up with the customer.\n\n---\n\nPURCHASE HANDOFF EXAMPLE\n\nInput:\n\nCustomer Name: John\n\nIntent: Purchase Intent\n\nCustomer wants to buy a Toyota Camry LE.\n\nOutput:\n\nHey Boss,\n\nCustomer: John\n\nReason for Handoff: Purchase Intent\n\nRequest: Customer wants to buy a Toyota Camry LE.\n\nDetails: Customer is ready to proceed with the purchase and requires human assistance.\n\nPlease follow up with the customer.\n\n---\n\nPAYMENT HANDOFF EXAMPLE\n\nInput:\n\nCustomer Name: Sarah\n\nIntent: Human Hand-Off\n\nCustomer wants to make payment.\n\nOutput:\n\nHey Boss,\n\nCustomer: Sarah\n\nReason for Handoff: Payment Request\n\nRequest: Customer is ready to make payment.\n\nDetails: Customer requires assistance from a Toyota representative to complete the payment process.\n\nPlease follow up with the customer.\n\n---\n\nCOMPLAINT HANDOFF EXAMPLE\n\nInput:\n\nCustomer Name: Michael\n\nIntent: Human Hand-Off\n\nCustomer is unhappy with a previous service.\n\nOutput:\n\nHey Boss,\n\nCustomer: Michael\n\nReason for Handoff: Customer Complaint\n\nRequest: Customer would like assistance regarding a service issue.\n\nDetails: Customer is dissatisfied and requires attention from a human representative.\n\nPlease follow up with the customer.\n\n---\n\nLEAD ALERT EXAMPLE\n\nInput:\n\nCustomer Name: David\n\nIntent: Lead Interest\n\nCustomer asked about Toyota Corolla pricing and availability.\n\nOutput:\n\nHey Boss,\n\nCustomer: David\n\nReason for Handoff: Qualified Lead\n\nRequest: Customer is interested in a Toyota Corolla.\n\nDetails: Customer requested pricing and availability information and may be a potential buyer.\n\nPlease follow up with the customer.\n\n---\n\nRULES\n\nAlways include:\n\n- Customer name:{{ $('Webhook').item.json.body.payload._data.notifyname }}\n- Reason for handoff\n- Customer request\n- Important details\n\nNever omit the customer name if available.\n\nNever invent information.\n\nNever guess.\n\nOnly use information provided by the previous AI Agent.\n\nKeep messages short and professional.\n\n---\n\nFINAL MISSION\n\nYour job is not customer service.\n\nYour job is not sales.\n\nYour job is not support.\n\nYour job is to create clear internal notifications for the Boss so that the Boss can quickly understand:\n\n- Who the customer is\n- What the customer wants\n- Why human intervention is needed\n- What action should be taken\n\nEvery message must be written directly to the Boss.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2864,
+        -592
+      ],
+      "id": "30e151ba-4757-4563-a274-d4f3707e7ffc",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-bd2c.up.railway.app/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi "
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "137199089615072@lid"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('AI Agent1').item.json.output }}"
+            },
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2512,
+        -480
+      ],
+      "id": "a207ce46-054c-46f1-ae59-2ae333ab18d5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9b7a9bc6-56aa-4be4-bd4e-005d32a47d75",
+              "name": "final_text",
+              "value": "={{ $('Webhook').item.json.body.payload.body || $('Analyze audio').item.json.content.parts[0].text ||\"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -4416,
+        -192
+      ],
+      "id": "a61c726a-6787-487f-b963-da3d10fc204d",
+      "name": "Edit Fields",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a16bcec-c907-4fb5-b838-101b47df8d47",
+              "name": "chatId",
+              "value": "={{ $json.body.payload.from }}",
+              "type": "string"
+            },
+            {
+              "id": "a44fb59d-46be-4176-a2a4-6fe0c89557e2",
+              "name": "customer_name",
+              "value": "={{ $json.body.payload._data.notifyName }}",
+              "type": "string"
+            },
+            {
+              "id": "10c39883-778f-4fa5-adc2-2f66e03ed682",
+              "name": "media_url",
+              "value": "={{ $json.body.payload.media.url }}",
+              "type": "string"
+            },
+            {
+              "id": "692dcdca-f9e4-4e96-94d2-15f28585c422",
+              "name": "User_message",
+              "value": "= {{ $json.body.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "b60ee681-1adf-4bf1-974d-95e82f964cdf",
+              "name": "account_name",
+              "value": "={{ $json.body.me.pushName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5312,
+        -192
+      ],
+      "id": "2fe0a4c8-b8b3-44cf-9a18-06f3bc34a98d",
+      "name": "Edit Fields 1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-bd2c.up.railway.app/api/sendImage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            },
+            {
+              "name": "chatId",
+              "value": "={{ $('Edit Fields 1').item.json.chatId }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('AI Agent').item.json.output }}"
+            },
+            {
+              "name": "file.mimetype",
+              "value": "image/jpeg"
+            },
+            {
+              "name": "file.url",
+              "value": "={{ $('Information Extractor1').item.json.output.image_url }}"
+            },
+            {
+              "name": "file.filename",
+              "value": "filename.jpeg"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2512,
+        112
+      ],
+      "id": "5f3c2935-0dc0-4f61-9759-852a895e9afc",
+      "name": "HTTP Request8"
+    },
+    {
+      "parameters": {
+        "text": "={{$json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "image_url",
+              "description": "=You are an Information Extractor, your work is to only extract the URL from every text that comes it you and there's a url in it, don't output anything that is not a url."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -2864,
+        112
+      ],
+      "id": "74c40f5b-0b41-4a74-bc16-c04a5ef2b48f",
+      "name": "Information Extractor1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.payload.from }}",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -3920,
+        32
+      ],
+      "id": "9a6fa034-02c0-4a49-9cfd-2579f93d516c",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sXNLaa6RLdWjvzNM",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "ministral-14b-latest",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -4112,
+        48
+      ],
+      "id": "13d57737-9454-4de1-a167-8bb3e447b5bf",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "T7iMujk86Ya8QyLy",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "ministral-14b-latest",
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -2784,
+        -368
+      ],
+      "id": "5c5614d8-4b7d-436b-a456-2ab15d6f1ca1",
+      "name": "Mistral Cloud Chat Model1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "T7iMujk86Ya8QyLy",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-bd2c.up.railway.app/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $('Webhook').item.json.body.payload.from }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output}}"
+            },
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2800,
+        -192
+      ],
+      "id": "86c19a0d-02e2-4f7a-ae6e-968bc50458cd",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "model": "ministral-8b-latest",
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -2784,
+        320
+      ],
+      "id": "76a560f1-200e-49cb-8b93-2ce7458d8df7",
+      "name": "Mistral Cloud Chat Model2",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "T7iMujk86Ya8QyLy",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer  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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $('Edit Fields').item.json.final_text }}"
+            },
+            {
+              "name": "topic",
+              "value": "general"
+            },
+            {
+              "name": "search_depth",
+              "value": "basic"
+            },
+            {
+              "name": "max_results",
+              "value": "5"
+            },
+            {
+              "name": "time_range",
+              "value": "day"
+            },
+            {
+              "name": "include_answer",
+              "value": "basic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        -3536,
+        32
+      ],
+      "id": "401dc3b1-f6a8-4d23-8cbb-e5ba23b0e8d2",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.7,
+          "topK": 40,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -3136,
+        64
+      ],
+      "id": "3e8ee217-9ca9-4b29-9934-0164b8e3e0cb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1dFwT7BvdM9hOcTk",
+          "name": "First Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o",
+          "mode": "list",
+          "cachedResultName": "Honcho WhatsApp bot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1948520762,
+          "mode": "list",
+          "cachedResultName": "Leads ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit#gid=1948520762"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TimeStamps": "={{ $now.toFormat('dd/LL/yyyy hh:mm a', { zone: 'Africa/Lagos' }) }}",
+            "Name": "={{ $('Webhook').item.json.body.payload._data.notifyName }}",
+            "Phone": "={{ $('Webhook').item.json.body.payload.from }}",
+            "Budget": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Budget', `Customer's budget for this record. Never leave blank.\n- If the customer stated an actual amount, use exactly that.\n- If no amount was stated but a specific product was discussed/agreed on, use that product's exact price from the Google Sheets inventory lookup — not an estimate, not a rounded number.\n- Only use a product's listed price, never guess a number that isn't confirmed in the sheet.`, 'string') }}",
+            "Car_Interest ": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Car_Interest_', `Vehicle the customer is interested in. Use the customer's actual request. Do not invent a vehicle.`, 'string') }}",
+            "Follow_Up_Dates": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Follow_Up_Dates', `your work is to Extract follow up date in YYYY-MM-DD format and output it. Any text that is being provided to you with date among it extract the date and present it exactly as it was written or you format it in a better way.`, 'string') }}",
+            "Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Status', `Set lead status. \"Hot Lead\" if ready to buy/pay/test drive. \"Warm Lead\" if asking price/specs. \"Cold Lead\" if just browsing. Default Warm Lead.`, 'string') }}",
+            "Notes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Notes', `Summarize the conversation in 2-3 sentences. Include car asked, budget, urgency, and mood. Be factual and short.`, 'string') }}",
+            "Follow_Up_Note": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Follow_Up_Note', `A SHORT phrase only (3-8 words max) — NOT a sentence, NOT a date, NO \"Reminder:\" prefix. This will be inserted into a template like: \"...following up regarding [this text].\" Just name what they're doing/buying.\n\nExample:\nBad: \"Reminder: Test drive for Rolls Royce Droptail and Toyota Camry on Thursday, 28 August 2026. Both customer and wife will be present.\"\nGood: \"your test drive for the Rolls-Royce Droptail and Toyota Camry\"`, 'string') }}"
+          },
+          "matchingColumns": [
+            "Phone"
+          ],
+          "schema": [
+            {
+              "id": "TimeStamps",
+              "displayName": "TimeStamps",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Car_Interest ",
+              "displayName": "Car_Interest ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow_Up_Dates",
+              "displayName": "Follow_Up_Dates",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow_Up_Note",
+              "displayName": "Follow_Up_Note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent",
+              "displayName": "sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -3408,
+        32
+      ],
+      "id": "2368845b-1f95-48dd-9ea6-294f27573116",
+      "name": "Append or update row in sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "y38Rp04IUkk2wHx4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-oss-120b",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "maxTokens": 1000,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -4016,
+        48
+      ],
+      "id": "7df9a477-a56e-49db-93dd-2b80a62e422c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "4XmTbctvh8Hy7kjU",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Automobile",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -5616,
+        -192
+      ],
+      "id": "1f2dc1ba-b03c-4628-a847-2decc105422a",
+      "name": "Webhook",
+      "webhookId": "537ac28d-57e4-4601-bc67-b2499b550c36"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.1-flash-lite"
+        },
+        "text": "=Transcribe this audio word-for-word exactly as spoken. Do not translate. If the speaker is speaking Igbo, transcribe it in Igbo. If English, transcribe in English. If Nigerian Pidgin, transcribe in Pidgin. Output only the transcription, nothing else.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -4640,
+        -256
+      ],
+      "id": "cdbb1107-c656-4dd2-b743-f4c3845fbfa0",
+      "name": "Analyze audio",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1dFwT7BvdM9hOcTk",
+          "name": "First Project"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete rows or columns from sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields 1": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "86553f1e-2d32-4ad7-a5da-f7aa60fffeff",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6a05958138aa500ccc455ca028b59e9b554de480fd5816723b29001d545d4422"
+  },
+  "nodeGroups": [],
+  "id": "rUpvJk2LOJZk8yaN",
+  "tags": []
+}

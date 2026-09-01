@@ -1,0 +1,596 @@
+{
+  "name": "My workflow Vol 3",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Waha3rd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1088,
+        -1952
+      ],
+      "id": "3db526ae-7f73-4b37-a0ec-e21ddeea4d49",
+      "name": "Webhook",
+      "webhookId": "78143dcc-2f16-4182-a08b-dca6663ca666"
+    },
+    {
+      "parameters": {
+        "url": "=\n{{ $('Organised Field').item.json.media_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Honchoapi"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -416,
+        -2032
+      ],
+      "id": "3af32708-af67-4b06-a74d-2c7e48e4dd51",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.1-flash-lite",
+          "cachedResultUrl": ""
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -192,
+        -2032
+      ],
+      "id": "02b6b996-cbc9-489b-ad63-ed0e89ad9281",
+      "name": "Transcribe a recording",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YGeY7YoCVreoUCar",
+          "name": "Second Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9a689229-c4ad-4afe-a147-57267693f33b",
+              "leftValue": "={{ $json.media_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -640,
+        -1952
+      ],
+      "id": "0c900c70-7acd-42be-89c5-2be4d756650b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "= {{ $('Edit Fields').item.json.final_text }}",
+        "options": {
+          "systemMessage": "=# SPOTLESS G CONCEPT LAUNDRY — SYSTEM PROMPT\n\n## IDENTITY\nYou are the Spotless G Concept Laundry Assistant — friendly, professional, and helpful. You handle laundry inquiries, pricing, and order/pickup requests for Spotless G Concept Laundry Service.\n\n## RESPONSE LENGTH\nKeep replies short — 2-4 sentences or a short bullet list. This is WhatsApp. Only go longer if the customer explicitly asks for more detail.\n\n## GREETING RULE\nGreet with the full introduction only ONCE per customer, per calendar day — not every message.\n\n## CUSTOMER NAME RULE\nCustomer Name Variable: {{ $('Organised Field').item.json.user_name }}\n\nUse the name naturally, once per message max — in the greeting, a key recommendation, or a confirmation. Never stack it repeatedly in one message.\n\nUse `{{ $now }}` to check the date.\n\n- First message from this customer today (or a brand-new customer) → send:\n\"Welcome to Spotless G Concept Laundry Service, {{$('Organised Field').item.json.user_name}}! 😊 We keep your clothes fresh, clean, and neatly finished. How can I help you today?\"\n- Already greeted this customer today → skip straight to answering, no \"welcome\" repeated.\n- New day since their last message → treat as a fresh greeting.\n\n## LANGUAGE RULE\nMirror the customer's language (English, Nigerian Pidgin, Igbo, British English). Never switch or mix first.\n\n## PRICING (official — never invent or alter)\n- Per cloth — ₦500\n- Full set duvet — ₦3,500\n- Shoes — ₦2,000\n- Suit — ₦2,000\n\nOnly quote what's listed here. If asked about something not listed, say a representative can confirm — don't guess.\n\n## SALES APPROACH\nYou're also here to gently encourage bookings — never pushy.\n- Understand what they need, recommend the right service.\n- When useful, mention: professional care, fabric handling, convenience, neat finishing.\n- If a customer seems unsure, ask what's holding them back and address it politely.\n- Never pressure, never fake urgency.\n\n## LEAD RULE (Append Row)\nOnly save a lead when the customer clearly wants the service — e.g. \"I want to wash my clothes,\" \"wash my shoes,\" \"I need my duvet cleaned,\" \"book a pickup.\" Casual questions (\"how much is laundry?\") do NOT count as a lead.\n\nWhen it qualifies, use the Append Row tool to save: customer name, item(s)/service requested, price, date. Never invent details not stated.\n\nAfter saving, respond with confirmation and next steps:\n\"Got it — I've noted your [item] for cleaning at ₦[price]. To arrange pickup, please contact our assistant directly: +2348084223997\"\n\n## ACCURACY\nNever invent prices or services. Only use what's listed above. If unsure, say a representative can help further rather than guessing.\n\n## CONDUCT\nCalm, respectful, professional — never argue, insult, or use offensive language, no matter how the customer speaks to you.\n\n## UPDATE\nMake sure to update the row when customer tells you he has paid to keep record accurate and also change from pending to settled/closed so everything looks clean to your boss.\n\n## CURRENT DATE & TIME\nRight now it is: {{ $('Organised Field').item.json.current_time }}\nTreat this as ground truth. Never calculate, estimate, or guess the date/time yourself — always copy this value directly.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        320,
+        -1952
+      ],
+      "id": "574a8fa1-3692-425f-93f2-45cbbec5af60",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://waha-production-1546.up.railway.app/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Honchoapi"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session",
+              "value": "={{ $('Organised Field').item.json.session }}"
+            },
+            {
+              "name": "chatId",
+              "value": "={{ $('Organised Field').item.json.ChatId }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        -1952
+      ],
+      "id": "9345f5bc-d688-4499-b19b-f6f2c40a193e",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.7,
+          "topK": 40,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        -1744
+      ],
+      "id": "8e55f59d-72f3-40b0-9549-28136fc367fe",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YGeY7YoCVreoUCar",
+          "name": "Second Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8412144-2f6c-4450-b60e-604639b60163",
+              "name": "final_text",
+              "value": "={{ $('Organised Field').item.json.user_message || $('Transcribe a recording').item.json.content.parts[0].text ||\"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        32,
+        -1952
+      ],
+      "id": "b4948d20-800d-4926-a390-88437cb29f89",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "10uqOTKFIBvBcQjWJVUKxfwDe6rBriWTJzsDHUqXgDFw",
+          "mode": "list",
+          "cachedResultName": "Smart G Concept ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10uqOTKFIBvBcQjWJVUKxfwDe6rBriWTJzsDHUqXgDFw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10uqOTKFIBvBcQjWJVUKxfwDe6rBriWTJzsDHUqXgDFw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Delivery Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Delivery_Status', `Current progress: Delivered, In Progress, or Awaiting Pickup.`, 'string') }}",
+            "Delivery Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Delivery_Date', `=Scheduled date for returning the cleaned items.\nExtract follow up date in YYYY-MM-DD format. \"tomorrow\" = today+1. \"next Friday\" = next friday date.\n`, 'string') }}",
+            "Price Per Item": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Price_Per_Item', `Standard rate charged for each item.\n`, 'string') }}",
+            "item": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('item', `Type of clothing or fabric (shirts, bedsheets, trousers, etc.). Or any one the customer should mention.`, 'string') }}",
+            "Quantity": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Quantity', `Number of items for that order. `, 'string') }}",
+            "Service type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Service_type', `Wash & Iron, Dry Clean, Stain Removal, etc. or any one the customer demands`, 'string') }}",
+            "Total Cost ": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Total_Cost_', `Auto‑calculated as Quantity × Price per Item`, 'string') }}",
+            "Payment Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Payment_Status', `Shows if the customer has Paid or if payment is Pending.`, 'string') }}",
+            "Phone Number ": "={{ $('Organised Field').item.json.ChatId }}",
+            "Name": "={{ $('Organised Field').item.json.user_name }}",
+            "Date": "={{ $now.toFormat('dd/LL/yyyy hh:mm a', { zone: 'Africa/Lagos' }) }}"
+          },
+          "matchingColumns": [
+            "Phone Number "
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number ",
+              "displayName": "Phone Number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "item",
+              "displayName": "item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Quantity",
+              "displayName": "Quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Service type",
+              "displayName": "Service type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Price Per Item",
+              "displayName": "Price Per Item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Cost ",
+              "displayName": "Total Cost ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Payment Status",
+              "displayName": "Payment Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery Date",
+              "displayName": "Delivery Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery Status",
+              "displayName": "Delivery Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -1744
+      ],
+      "id": "0f60d33b-a85b-49b8-a409-80ed4d31c45b",
+      "name": "Append or update row in sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "mCqG0vAf3xlb9kxB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "62e02348-9ef6-4bb7-a9d5-c0ca488035a5",
+              "name": "media_url",
+              "value": "={{ $json.body.payload.media.url }}",
+              "type": "string"
+            },
+            {
+              "id": "61985d9c-ce2c-48ff-8cad-a8761117f7dd",
+              "name": "mime_type",
+              "value": "={{ $json.body.payload.media.mimetype }}",
+              "type": "string"
+            },
+            {
+              "id": "d355994f-f87d-4217-8461-7bc0f5880bbc",
+              "name": "session",
+              "value": "={{ $json.body.session }}",
+              "type": "string"
+            },
+            {
+              "id": "7f86e17c-1781-44f5-b23a-d3c3ce93e0c0",
+              "name": "ChatId",
+              "value": "={{ $json.body.payload.from }}",
+              "type": "string"
+            },
+            {
+              "id": "a4af43c7-e455-448d-ad02-4c7158d85628",
+              "name": "user_message",
+              "value": "={{ $json.body.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "8057fdae-3607-4e24-8314-c7a5122acede",
+              "name": "user_name",
+              "value": "={{ $json.body.payload._data.notifyName }}",
+              "type": "string"
+            },
+            {
+              "id": "2373fe97-072b-498c-b2b1-c4dbe96bc396",
+              "name": "current_time",
+              "value": "={{ $now.setZone('Africa/Lagos').toFormat(\"cccc, dd LLLL yyyy, hh:mm a\") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -864,
+        -1952
+      ],
+      "id": "76c301af-31a0-4c4b-bb1e-1c6bb0945be9",
+      "name": "Organised Field"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Organised Field').item.json.ChatId }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        400,
+        -1744
+      ],
+      "id": "72f494bf-fedb-49d1-ab6e-6f285776f5ff",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Organised Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Organised Field": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5aef5ae4-ac52-4a9d-b46d-13ac6a24e3c5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ce19a4f6d77f3b8fee3d5cb355b3e44d997542503c9ea721f5a682e1867fe302"
+  },
+  "nodeGroups": [],
+  "id": "sEnoF03FLSJUaQix",
+  "tags": []
+}
